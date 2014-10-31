@@ -256,4 +256,12 @@ config PHY_STIH41X_USB
 	  Enable this to support the USB transceiver that is part of
 	  STMicroelectronics STiH41x SoC series.
 
+config PHY_RK3066_USB
+	tristate "Rockchip RK3188 and RK3066 SoC USB PHY driver"
+	depends on ARCH_ROCKCHIP && OF
+	select GENERIC_PHY
+	help
+	  Enable this to support the USB transceiver that is part of Rockchip
+	  RK3188 and RK3066 SoCs.
+
 endmenu
