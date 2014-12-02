@@ -1,6 +1,7 @@
 /*
  * Copyright (C) Fuzhou Rockchip Electronics Co.Ltd
  * Author:Mark Yao <mark.yao@rock-chips.com>
+ * Contributor: Romain Perier <romain.perier@gmail.com>
  *
  * based on exynos_drm_drv.c
  *
@@ -14,7 +15,6 @@
  * GNU General Public License for more details.
  */
 
-#include <asm/dma-iommu.h>
 
 #include <drm/drmP.h>
 #include <drm/drm_crtc_helper.h>
@@ -28,40 +28,13 @@
 #include "rockchip_drm_fb.h"
 #include "rockchip_drm_fbdev.h"
 #include "rockchip_drm_gem.h"
+#include "rockchip_drm_iommu.h"
 
 #define DRIVER_NAME	"rockchip"
 #define DRIVER_DESC	"RockChip Soc DRM"
 #define DRIVER_DATE	"20140818"
 #define DRIVER_MAJOR	1
 #define DRIVER_MINOR	0
-
-/*
- * Attach a (component) device to the shared drm dma mapping from master drm
- * device.  This is used by the VOPs to map GEM buffers to a common DMA
- * mapping.
- */
-int rockchip_drm_dma_attach_device(struct drm_device *drm_dev,
-				   struct device *dev)
-{
-	struct dma_iommu_mapping *mapping = drm_dev->dev->archdata.mapping;
-	int ret;
-
-	ret = dma_set_coherent_mask(dev, DMA_BIT_MASK(32));
-	if (ret)
-		return ret;
-
-	dma_set_max_seg_size(dev, DMA_BIT_MASK(32));
-
-	return arm_iommu_attach_device(dev, mapping);
-}
-EXPORT_SYMBOL_GPL(rockchip_drm_dma_attach_device);
-
-void rockchip_drm_dma_detach_device(struct drm_device *drm_dev,
-				    struct device *dev)
-{
-	arm_iommu_detach_device(dev);
-}
-EXPORT_SYMBOL_GPL(rockchip_drm_dma_detach_device);
 
 int rockchip_register_crtc_funcs(struct drm_device *dev,
 				 const struct rockchip_crtc_funcs *crtc_funcs,
@@ -127,7 +100,6 @@ static void rockchip_drm_crtc_disable_vblank(struct drm_device *dev, int pipe)
 static int rockchip_drm_load(struct drm_device *drm_dev, unsigned long flags)
 {
 	struct rockchip_drm_private *private;
-	struct dma_iommu_mapping *mapping;
 	struct device *dev = drm_dev->dev;
 	int ret;
 
@@ -141,35 +113,18 @@ static int rockchip_drm_load(struct drm_device *drm_dev, unsigned long flags)
 
 	rockchip_drm_mode_config_init(drm_dev);
 
-	dev->dma_parms = devm_kzalloc(dev, sizeof(*dev->dma_parms),
-				      GFP_KERNEL);
-	if (!dev->dma_parms) {
-		ret = -ENOMEM;
-		goto err_config_cleanup;
-	}
-
-	/* TODO(djkurtz): fetch the mapping start/size from somewhere */
-	mapping = arm_iommu_create_mapping(&platform_bus_type, 0x00000000,
-					   SZ_2G);
-	if (IS_ERR(mapping)) {
-		ret = PTR_ERR(mapping);
-		goto err_config_cleanup;
-	}
-
-	ret = dma_set_mask_and_coherent(dev, DMA_BIT_MASK(32));
+	ret = rockchip_drm_iommu_create_mapping(drm_dev);
 	if (ret)
-		goto err_release_mapping;
+		goto err_config_cleanup;
 
-	dma_set_max_seg_size(dev, DMA_BIT_MASK(32));
-
-	ret = arm_iommu_attach_device(dev, mapping);
+	ret = rockchip_drm_iommu_attach_master(drm_dev);
 	if (ret)
 		goto err_release_mapping;
 
 	/* Try to bind all sub drivers. */
 	ret = component_bind_all(dev, drm_dev);
 	if (ret)
-		goto err_detach_device;
+		goto err_detach_master;
 
 	/* init kms poll for handling hpd */
 	drm_kms_helper_poll_init(drm_dev);
@@ -201,10 +156,10 @@ err_vblank_cleanup:
 err_kms_helper_poll_fini:
 	drm_kms_helper_poll_fini(drm_dev);
 	component_unbind_all(dev, drm_dev);
-err_detach_device:
-	arm_iommu_detach_device(dev);
+err_detach_master:
+	rockchip_drm_iommu_detach_master(drm_dev);
 err_release_mapping:
-	arm_iommu_release_mapping(dev->archdata.mapping);
+	rockchip_drm_iommu_release_mapping(drm_dev);
 err_config_cleanup:
 	drm_mode_config_cleanup(drm_dev);
 	drm_dev->dev_private = NULL;
@@ -219,8 +174,8 @@ static int rockchip_drm_unload(struct drm_device *drm_dev)
 	drm_vblank_cleanup(drm_dev);
 	drm_kms_helper_poll_fini(drm_dev);
 	component_unbind_all(dev, drm_dev);
-	arm_iommu_detach_device(dev);
-	arm_iommu_release_mapping(dev->archdata.mapping);
+	rockchip_drm_iommu_detach_master(drm_dev);
+	rockchip_drm_iommu_release_mapping(drm_dev);
 	drm_mode_config_cleanup(drm_dev);
 	drm_dev->dev_private = NULL;
 

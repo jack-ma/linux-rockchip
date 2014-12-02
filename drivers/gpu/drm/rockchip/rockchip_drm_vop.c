@@ -32,6 +32,7 @@
 #include "rockchip_drm_drv.h"
 #include "rockchip_drm_gem.h"
 #include "rockchip_drm_fb.h"
+#include "rockchip_drm_iommu.h"
 #include "rockchip_drm_vop.h"
 
 #define VOP_REG(off, _mask, s) \
@@ -411,7 +412,7 @@ static void vop_enable(struct drm_crtc *crtc)
 	 * Now that we have enabled the clock we attach it to the shared drm
 	 * mapping.
 	 */
-	ret = rockchip_drm_dma_attach_device(vop->drm_dev, vop->dev);
+	ret = rockchip_drm_iommu_attach_device(vop->drm_dev, vop->dev);
 	if (ret) {
 		dev_err(vop->dev, "failed to attach dma mapping, %d\n", ret);
 		goto err_disable_aclk;
@@ -459,7 +460,7 @@ static void vop_disable(struct drm_crtc *crtc)
 	 */
 	clk_disable(vop->dclk);
 
-	rockchip_drm_dma_detach_device(vop->drm_dev, vop->dev);
+	rockchip_drm_iommu_detach_device(vop->drm_dev, vop->dev);
 
 	clk_disable(vop->aclk);
 	clk_disable(vop->hclk);

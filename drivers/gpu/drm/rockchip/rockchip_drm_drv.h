@@ -60,9 +60,5 @@ int rockchip_drm_encoder_get_mux_id(struct device_node *node,
 				    struct drm_encoder *encoder);
 int rockchip_drm_crtc_mode_config(struct drm_crtc *crtc, int connector_type,
 				  int out_mode);
-int rockchip_drm_dma_attach_device(struct drm_device *drm_dev,
-				   struct device *dev);
-void rockchip_drm_dma_detach_device(struct drm_device *drm_dev,
-				    struct device *dev);
 
 #endif /* _ROCKCHIP_DRM_DRV_H_ */

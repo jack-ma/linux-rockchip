@@ -21,6 +21,7 @@
 
 #include "rockchip_drm_drv.h"
 #include "rockchip_drm_gem.h"
+#include "rockchip_drm_iommu.h"
 
 static int rockchip_gem_alloc_buf(struct rockchip_gem_object *rk_obj)
 {
@@ -29,6 +30,8 @@ static int rockchip_gem_alloc_buf(struct rockchip_gem_object *rk_obj)
 
 	init_dma_attrs(&rk_obj->dma_attrs);
 	dma_set_attr(DMA_ATTR_WRITE_COMBINE, &rk_obj->dma_attrs);
+	if (rockchip_is_drm_iommu_supported(drm))
+		dma_set_attr(DMA_ATTR_FORCE_CONTIGUOUS, &rk_obj->dma_attrs);
 
 	/* TODO(djkurtz): Use DMA_ATTR_NO_KERNEL_MAPPING except for fbdev */
 	rk_obj->kvaddr = dma_alloc_attrs(drm->dev, obj->size,

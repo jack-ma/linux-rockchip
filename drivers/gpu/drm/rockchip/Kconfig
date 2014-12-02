@@ -1,6 +1,6 @@
 config DRM_ROCKCHIP
 	tristate "DRM Support for Rockchip"
-	depends on DRM && ROCKCHIP_IOMMU
+	depends on DRM
 	select DRM_KMS_HELPER
 	select DRM_KMS_FB_HELPER
 	select DRM_PANEL
@@ -15,3 +15,9 @@ config DRM_ROCKCHIP
 	  management to userspace. This driver does not provide
 	  2D or 3D acceleration; acceleration is performed by other
 	  IP found on the SoC.
+
+config DRM_ROCKCHIP_IOMMU
+       bool "Rockchip DRM IOMMU Support"
+       depends on DRM_ROCKCHIP && ROCKCHIP_IOMMU
+       help
+         Choose this option if you want to use IOMMU feature for DRM.
