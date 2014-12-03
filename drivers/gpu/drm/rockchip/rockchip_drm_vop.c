@@ -1,6 +1,8 @@
 /*
  * Copyright (C) Fuzhou Rockchip Electronics Co.Ltd
  * Author:Mark Yao <mark.yao@rock-chips.com>
+ * Contributor: Romain Perier <romain.perier@gmail.com>
+ * Contributor: Heiko Stuebner <heiko@sntech.de>
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -291,6 +293,15 @@ static const struct vop_win_data rk3288_vop_win_data[] = {
 	{ .base = 0x00, .phy = &cursor_data, .type = DRM_PLANE_TYPE_OVERLAY },
 };
 
+static const struct vop_driver_data rk3188_vop = {
+	.init_table = rk3188_vop_init_reg_table,
+	.table_size = ARRAY_SIZE(rk3188_vop_init_reg_table),
+	.ctrl = &rk3188_ctrl_data,
+	.win[0] = &rk3188_win0,
+	.win[1] = &rk3188_win1,
+	.num_vop_win = 2,
+};
+
 static const struct vop_data rk3288_vop = {
 	.init_table = vop_init_reg_table,
 	.table_size = ARRAY_SIZE(vop_init_reg_table),
@@ -300,6 +311,8 @@ static const struct vop_data rk3288_vop = {
 };
 
 static const struct of_device_id vop_driver_dt_match[] = {
+	{ .compatible = "rockchip,rk3188-vop"
+	  .data = &rk3188_vop },
 	{ .compatible = "rockchip,rk3288-vop",
 	  .data = &rk3288_vop },
 	{},
