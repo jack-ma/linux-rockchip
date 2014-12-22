@@ -196,14 +196,6 @@ static int dwc2_driver_probe(struct platform_device *dev)
 		return irq;
 	}
 
-	dev_dbg(hsotg->dev, "registering common handler for irq%d\n",
-		irq);
-	retval = devm_request_irq(hsotg->dev, irq,
-				  dwc2_handle_common_intr, IRQF_SHARED,
-				  dev_name(hsotg->dev), hsotg);
-	if (retval)
-		return retval;
-
 	res = platform_get_resource(dev, IORESOURCE_MEM, 0);
 	hsotg->regs = devm_ioremap_resource(&dev->dev, res);
 	if (IS_ERR(hsotg->regs))
@@ -237,6 +229,15 @@ static int dwc2_driver_probe(struct platform_device *dev)
 	retval = dwc2_gadget_init(hsotg, irq);
 	if (retval)
 		return retval;
+
+        dev_dbg(hsotg->dev, "registering common handler for irq%d\n",
+                irq);
+        retval = devm_request_irq(hsotg->dev, irq,
+                                dwc2_handle_common_intr, IRQF_SHARED,
+                                dev_name(hsotg->dev), hsotg);
+        if (retval)
+                return retval;
+
 	retval = dwc2_hcd_init(hsotg, irq, params);
 	if (retval)
 		return retval;
