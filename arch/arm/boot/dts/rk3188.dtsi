@@ -16,6 +16,7 @@
 #include <dt-bindings/gpio/gpio.h>
 #include <dt-bindings/pinctrl/rockchip.h>
 #include <dt-bindings/clock/rk3188-cru.h>
+#include <dt-bindings/rkfb/rk_fb.h>
 #include "rk3xxx.dtsi"
 
 / {
@@ -77,6 +78,25 @@
 			reg = <0x0 0x50>;
 		};
 	};
+
+    ion{
+        compatible = "rockchip,ion";
+        #address-cells = <1>;
+        #size-cells = <0>;
+        rockchip,ion-heap@1 { /* CMA HEAP */
+            compatible = "rockchip,ion-reserve";
+            reg = <1>;
+            memory-reservation = <0x00000000 0x10000000>; /* 256MB */
+        };
+        rockchip,ion-heap@3 { /* SYSTEM HEAP */
+            reg = <3>;
+        };
+    };
+
+    fb: fb{
+        compatible = "rockchip,rk-fb";
+        rockchip,disp-mode = <DUAL>;
+    };
 
 	i2s0: i2s@1011a000 {
 		compatible = "rockchip,rk3188-i2s", "rockchip,rk3066-i2s";
